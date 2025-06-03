@@ -2,6 +2,9 @@ import fs from "fs";
 import path from "path";
 import csvParser from "csv-parser";
 import { INDICES, pinecone } from "./config/pinecone";
+import { openAI } from "./config/openai";
+import { FORMAT_AND_SUMMARIZE_JOB_POSTING } from "./prompts/jobPosting";
+import { IntegratedRecord, RecordMetadata } from "@pinecone-database/pinecone";
 
 interface RawCsvRow {
   job_title: string;
@@ -34,18 +37,13 @@ async function parseFirstNRows(csvFilePath: string, maxRows: number): Promise<Ra
         results.push(row);
 
         if (rowCount >= maxRows) {
-          // 1. Remove further 'data' listeners
           parser.removeAllListeners("data");
-          // 2. Pause the parser (so no more 'data' events fire)
           parser.pause();
-          // 3. Destroy the underlying read stream to free resources
           readStream.destroy();
-          // 4. Resolve with what we have so far
           resolve(results);
         }
       })
       .on("end", () => {
-        // If the file had fewer than maxRows, we end up here
         resolve(results);
       })
       .on("error", (err) => {
@@ -54,10 +52,52 @@ async function parseFirstNRows(csvFilePath: string, maxRows: number): Promise<Ra
   })
 }
 
-const transform = (data: RawCsvRow[]) => {
-  return data.map((row, i) => {
-    
+interface SynthesizedJobPosting {
+  title_metadata: string,
+  skills_list: string[],
+  role_summary: string[]
+}
+
+const synthesizeAndFormatJobPosting = async (data: RawCsvRow): Promise<SynthesizedJobPosting> => {
+  // call openai to format job posting based on skill, impact,
+
+  const response = await openAI.chat.completions.create({
+    model: 'o3-mini',
+    messages: [
+    {
+      role: 'system',
+      content: 'You are a helpful assistant that converts raw job descriptions into a standardized, embedding-friendly format.'
+    },
+    {
+      role: 'user',
+      content: FORMAT_AND_SUMMARIZE_JOB_POSTING(JSON.stringify(data))
+    }
+    ]
   })
+
+  const raw = response.choices[0].message.content;
+  try {
+    if (raw == null) {
+      throw new Error('synthesizeAndFormatJobPosting returned a null value');
+    }
+    return JSON.parse(raw) as SynthesizedJobPosting;
+  } catch (err) {
+    console.error('Failed to parse JSON from GPT:', raw);
+    throw err;
+  }
+}
+
+const transformToPineconeDocument = (data: SynthesizedJobPosting, id: string):IntegratedRecord<RecordMetadata> => {
+  const textToEmbed =  `
+    title_metadata: ${data.title_metadata}
+    skills_list: ${data.skills_list}
+    role_summary: ${data.role_summary}
+  `.trim()
+
+  return {
+    id,
+    chunk_text: textToEmbed,
+  }
 }
 
 
@@ -79,17 +119,18 @@ const upsertJobsInBatches = async (jobs: any[], batchSize: number = 50) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     console.log("✅ Upsert completed successfully.");
-
   }
 }
 
 (async () => {
   try {
-    const first20 = await parseFirstNRows("./postings.csv", 1000);
+    const csvJobs = await parseFirstNRows("./postings.csv", 20);
 
-    const transformedData = transform(first20);
+    const synthesizedJobs = await Promise.all(csvJobs.map(async (job) => await synthesizeAndFormatJobPosting(job)));
 
-    await upsertJobsInBatches(transformedData, 96)
+    const transformedJobs = synthesizedJobs.map((job, index) => transformToPineconeDocument(job, index.toString()))
+
+    await upsertJobsInBatches(transformedJobs)
 
   } catch (err) {
     console.error(err);

@@ -8,7 +8,5 @@ export const pinecone = new Pinecone({
 });
 
 export enum INDICES {
-  JOB_POSTINGS = 'job-postings'
+  JOB_POSTINGS = 'job-postings-new'
 }
-
-export const INDEX_NAME = 'learning-index';
