@@ -8,6 +8,7 @@ async function main() {
   const pineconeIndices = await pinecone.listIndexes();
 
   Object.values(INDICES).forEach(async (index) => {
+    // create index with integrated embedding inference if not exist yet - for testing purposes.
     if (!pineconeIndices.indexes?.find((pineConIndex) => pineConIndex.name === index)) {
       await pinecone.createIndexForModel({
         name: index,

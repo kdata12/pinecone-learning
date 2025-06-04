@@ -2,23 +2,9 @@ import fs from "fs";
 import path from "path";
 import csvParser from "csv-parser";
 import { INDICES, pinecone } from "./config/pinecone";
-import { openAI } from "./config/openai";
-import { FORMAT_AND_SUMMARIZE_JOB_POSTING } from "./prompts/jobPosting";
-import { IntegratedRecord, RecordMetadata } from "@pinecone-database/pinecone";
-
-interface RawCsvRow {
-  job_title: string;
-  company: string;
-  job_location: string;
-  job_link: string;
-  first_seen: string;
-  search_city: string;
-  search_country: string;
-  job_level: string;
-  job_type: string;
-  job_summary: string;
-  job_skills: string;
-}
+import { openAI, defaultModel } from "./config/openai";
+import { FORMAT_AND_SUMMARIZE_JOB_POSTING } from "./lib/constants/prompts";
+import { RawCsvRow, SynthesizedJobPosting } from "./lib/types";
 
 async function parseFirstNRows(csvFilePath: string, maxRows: number): Promise<RawCsvRow[]> {
   return new Promise((resolve, reject) => {
@@ -52,26 +38,18 @@ async function parseFirstNRows(csvFilePath: string, maxRows: number): Promise<Ra
   })
 }
 
-interface SynthesizedJobPosting {
-  title_metadata: string,
-  skills_list: string[],
-  role_summary: string[]
-}
-
 const synthesizeAndFormatJobPosting = async (data: RawCsvRow): Promise<SynthesizedJobPosting> => {
-  // call openai to format job posting based on skill, impact,
-
   const response = await openAI.chat.completions.create({
-    model: 'o3-mini',
+    model: defaultModel,
     messages: [
-    {
-      role: 'system',
-      content: 'You are a helpful assistant that converts raw job descriptions into a standardized, embedding-friendly format.'
-    },
-    {
-      role: 'user',
-      content: FORMAT_AND_SUMMARIZE_JOB_POSTING(JSON.stringify(data))
-    }
+      {
+        role: 'system',
+        content: 'You are a helpful assistant that converts raw job descriptions into a standardized, embedding-friendly format.'
+      },
+      {
+        role: 'user',
+        content: FORMAT_AND_SUMMARIZE_JOB_POSTING(JSON.stringify(data))
+      }
     ]
   })
 
@@ -87,19 +65,27 @@ const synthesizeAndFormatJobPosting = async (data: RawCsvRow): Promise<Synthesiz
   }
 }
 
-const transformToPineconeDocument = (data: SynthesizedJobPosting, id: string):IntegratedRecord<RecordMetadata> => {
-  const textToEmbed =  `
+const transformToPineconeDocument = (data: SynthesizedJobPosting, originalJob: RawCsvRow, id: string) => {
+  const textToEmbed = `
     title_metadata: ${data.title_metadata}
-    skills_list: ${data.skills_list}
-    role_summary: ${data.role_summary}
+    role_summary: ${data.role_summary.join(' ')}
   `.trim()
 
   return {
     id,
     chunk_text: textToEmbed,
+    job_title: originalJob.job_title,
+    company: originalJob.company,
+    job_level: originalJob.job_level,
+    job_type: originalJob.job_type,
+    job_location: originalJob.job_location,
+    search_city: originalJob.search_city,
+    search_country: originalJob.search_country,
+    first_seen: originalJob.first_seen,
+    skills: data.skills_list,
+    skills_count: data.skills_list.length
   }
 }
-
 
 const upsertJobsInBatches = async (jobs: any[], batchSize: number = 50) => {
   const index = pinecone.index(INDICES.JOB_POSTINGS);
@@ -113,25 +99,34 @@ const upsertJobsInBatches = async (jobs: any[], batchSize: number = 50) => {
 
     console.log("Metadata being sent for record 0:", batch[0].metadata);
 
-
-    await index.upsertRecords(batch)
+    await index.upsertRecords(batch);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    console.log("✅ Upsert completed successfully.");
+    console.log("Upsert completed successfully.");
   }
 }
 
 (async () => {
   try {
-    const csvJobs = await parseFirstNRows("./postings.csv", 20);
+    console.log('inserting job postings into pinecone index ...')
+    const csvJobs = await parseFirstNRows("./postings.csv", 1);
+
+    const indexes = await pinecone.listIndexes();
+    const indexExists = indexes.indexes?.some(index => index.name === INDICES.JOB_POSTINGS);
+
+    if (!indexExists) {
+      console.log('Pinecone index does not exist.');
+      return;
+    }
 
     const synthesizedJobs = await Promise.all(csvJobs.map(async (job) => await synthesizeAndFormatJobPosting(job)));
 
-    const transformedJobs = synthesizedJobs.map((job, index) => transformToPineconeDocument(job, index.toString()))
+    const transformedJobs = synthesizedJobs.map((job, index) => transformToPineconeDocument(job, csvJobs[index], index.toString()))
 
     await upsertJobsInBatches(transformedJobs)
 
+    console.log('done inserting ...')
   } catch (err) {
     console.error(err);
   }

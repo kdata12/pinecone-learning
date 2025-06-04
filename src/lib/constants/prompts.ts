@@ -1,3 +1,7 @@
+/**
+ * AI prompts used throughout the application
+ */
+
 export const FORMAT_AND_SUMMARIZE_JOB_POSTING = (post: string): string => `
 Below is an example of how to convert a raw job posting JSON into the desired JOB_FORMAT. Follow this pattern exactly for any new posting.
 
@@ -58,4 +62,47 @@ Now, convert the following raw job posting JSON into exactly that same JSON stru
 ${post}
 `
 
+export const SUMMARIZE_BRAGBOOK_ENTRIES = (entries: string): string => `
+Below is an example of how to convert bragbook entries (weekly work accomplishments) into a concise achievement summary optimized for job matching. Follow this pattern exactly.
 
+===== EXAMPLE INPUT =====
+
+Week of May 12–16, 2025
+Monday, May 12:
+- Designed and scoped a new "Smart Notification" microservice to replace legacy polling jobs, drafting initial ER diagrams and API contracts using Swagger.
+- Paired with a senior engineer to set up a proof-of-concept in Go, focusing on low-latency fan-out to WebSocket clients.
+- Submitted the design proposal to the team and received positive feedback from Product ("the new push model will cut user complaints in half").
+
+Wednesday, May 14:
+- Deployed the POC service to our staging Kubernetes cluster (EKS) using a CI/CD pipeline update (added new CodeBuild step). Build time improved by 18% due to caching Docker layers.
+- Discovered a Redis cache misconfiguration causing inconsistent subscription lookups; patched the Helm chart, reducing "cache miss" errors by 65% in staging.
+- Held a design review with QA and Security teams; addressed concerns around token expiration and race conditions by adding a signed JWT with a sliding expiration window.
+
+Thursday, May 15:
+- Shifted focus to front-end integration: added a "Subscribe" button in the React dashboard (TypeScript + TailwindCSS), hooking into GET /topics and POST /subscriptions. Ensured optimistic UI updates to improve perceived speed.
+- Collaborated with UX designer to finalize spinner animations and hover states, resulting in a clean user experience.
+- Mentored two junior engineers through their first pull requests, guiding them on writing unit tests in Jest and integrating with GitHub Actions.
+
+Friday, May 16:
+- Presented "Push-Based Notifications Roadmap" in the weekly Engineering All-Hands: showed before/after latency comparisons (legacy polling avg: 3s, new POC: 200ms).
+- Received kudos from Team Lead: "Great work lowering server load by ~30% and setting us up for real-time features."
+- Documented endpoint usage and authentication flow in our internal Confluence, adding examples in cURL and Postman.
+
+===== EXAMPLE OUTPUT =====
+
+{
+  "achievement_summary": [
+    "Architected and deployed a high-performance microservice using Go and Kubernetes, replacing legacy polling systems with real-time WebSocket notifications and reducing latency from 3 seconds to 200ms.",
+    "Led cross-functional collaboration with Product, QA, and Security teams to design secure notification systems, implementing JWT-based authentication and addressing scalability concerns through comprehensive technical reviews.",
+    "Optimized CI/CD infrastructure and resolved critical Redis caching issues, improving build times by 18% and reducing cache miss errors by 65% through strategic Helm chart configurations.",
+    "Mentored junior engineers and presented technical roadmaps to leadership, demonstrating system improvements that reduced server load by 30% while establishing documentation standards and testing practices.",
+    "Delivered full-stack integration from backend APIs to React frontend components, ensuring optimal user experience through TypeScript implementation and collaboration with UX design teams."
+  ]
+}
+
+===== END EXAMPLE =====
+
+Your task: Convert the following bragbook entries into exactly that same JSON structure. Focus on quantifiable achievements, technical impact, leadership activities, and collaborative accomplishments. Do not include any extra text—only output valid JSON with an "achievement_summary" field containing 4-5 bullet points:
+
+${entries}
+` 
