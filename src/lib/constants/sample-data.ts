@@ -9,7 +9,7 @@ Skills: JavaScript, TypeScript, React, Next.js, Node.js, Go, Python, AWS (Lambda
 Software Engineer with 2+ years professional experience across Deloitte and early‑stage startups, seeking mid‑level full‑time roles. Location: Phoenix, Arizona (open to remote/hybrid). Skills: JavaScript, TypeScript, React, Next.js, Node.js, Go, Python, Rust, AWS (Lambda, S3, EventBridge, SQS, RDS, ECS, CDK, CloudFormation), Docker, MySQL, MongoDB, Redis, GraphQL, CI/CD, Jest, TailwindCSS. Built a visa‑issuance platform serving 10 million applicants annually for 230 embassies, achieving 98 Lighthouse score and >98 % unit test coverage. Designed event‑driven micro‑services handling 10 K daily active users and reduced database latency by 93 %. Secret‑cleared US citizen passionate about distributed systems, AI products, and developer experience, with strong mentoring and cross‑functional collaboration skills.
 `
 
-export const BRAG_ENTRY_1 = `
+export const SAMPLE_BRAG_ENTRY = `
 InnovaTech Labs – Mid-Level Software Engineer
 
 Week of May 12–16, 2025
@@ -44,4 +44,41 @@ Friday, May 16:
 - Received kudos from Team Lead: "Great work lowering server load by ~30 % and setting us up for real-time features."
 
 - Documented endpoint usage and authentication flow in our internal Confluence, adding examples in cURL and Postman.
+`
+
+export const SAMPLE_BRAG_ENTRY_SIMILAR_TO_JOB_POSTING_1 = `
+Role: Associate Software Engineer (Remote)
+
+Company: TechWorks Automation
+
+Monday, July 8:
+
+- Designed and implemented a new WPF desktop application in C#/.NET to monitor PLC (Programmable Logic Controller) status for our client’s assembly line. Integrated real-time data polling with user-configurable alarms, reducing manual oversight by 60 %.
+
+- Collaborated with electrical engineers to reverse-engineer ladder logic protocols and expose key sensor readings via a robust C++ DLL, which our C# layer consumed.
+
+Tuesday, July 9:
+
+- Built two ASP.NET MVC pages and corresponding WebAPI controllers to allow supervisors to push configuration changes from the web UI directly to the PLC network. Ensured end-to-end security by adding JWT-based authentication and role checks.
+
+- Wrote unit and integration tests (using MSTest and FluentAssertions) covering 85 % of our new controller code paths.
+
+Wednesday, July 10:
+
+- Analyzed existing Microsoft SQL Server schemas to identify slow-running ETL jobs. Optimized stored procedures and added missing nonclustered indexes—improved nightly data import performance by 45 %.
+
+- Partnered with the data team to create a small SSIS package that archived ten million records to a separate data mart, preserving transactional history while keeping the primary OLTP database under 200 GB.
+
+Thursday, July 11:
+
+- Integrated Git workflows with Azure DevOps: configured branch policies and pull request templates, reducing merge conflicts by 30 %. Led a 30-minute knowledge share on “Best Practices for Feature Branches” in our weekly stand-up.
+
+- Deployed our latest WebAPI to an Azure App Service slot using CI/CD pipelines (YAML in Azure DevOps), enabling zero-downtime swaps and automatic rollback on failure.
+
+Friday, July 12:
+
+- Refactored the front-end of our ASP.NET MVC application with HTML5/CSS and JavaScript to support a responsive design; replaced an old jQuery widget with a lightweight React component, improving page load time by 25 %.
+
+- Mentored a summer intern on building a small Unity visualization of PLC data for training demos—guided them through C# scripting, prefab creation, and runtime data binding.
+
 `

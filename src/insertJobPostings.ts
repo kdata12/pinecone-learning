@@ -67,14 +67,15 @@ const synthesizeAndFormatJobPosting = async (data: RawCsvRow): Promise<Synthesiz
 
 const transformToPineconeDocument = (data: SynthesizedJobPosting, originalJob: RawCsvRow, id: string) => {
   const textToEmbed = `
-    title_metadata: ${data.title_metadata}
-    role_summary: ${data.role_summary.join(' ')}
+    titleMetadata: ${data.title_metadata}
+    roleSummary: ${data.role_summary.join(' ')}
   `.trim()
 
   return {
     id,
     chunk_text: textToEmbed,
     job_title: originalJob.job_title,
+    job_link: originalJob.job_link,
     company: originalJob.company,
     job_level: originalJob.job_level,
     job_type: originalJob.job_type,
@@ -83,7 +84,6 @@ const transformToPineconeDocument = (data: SynthesizedJobPosting, originalJob: R
     search_country: originalJob.search_country,
     first_seen: originalJob.first_seen,
     skills: data.skills_list,
-    skills_count: data.skills_list.length
   }
 }
 
@@ -110,7 +110,7 @@ const upsertJobsInBatches = async (jobs: any[], batchSize: number = 50) => {
 (async () => {
   try {
     console.log('inserting job postings into pinecone index ...')
-    const csvJobs = await parseFirstNRows("./postings.csv", 1);
+    const csvJobs = await parseFirstNRows("./postings.csv", 50);
 
     const indexes = await pinecone.listIndexes();
     const indexExists = indexes.indexes?.some(index => index.name === INDICES.JOB_POSTINGS);

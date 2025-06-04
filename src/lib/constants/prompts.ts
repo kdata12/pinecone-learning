@@ -58,7 +58,7 @@ Below is an example of how to convert a raw job posting JSON into the desired JO
 ===== END EXAMPLE =====
 
 Now, convert the following raw job posting JSON into exactly that same JSON structure. Do not include any extra text—only output valid JSON with fields \"title_metadata\", \"skills_list\" (array of strings), and \"role_summary\" (array of strings):
-
+DO NOT INCLUDE THE "\`\`\`json\`\`\`" IN THE OUTPUT
 ${post}
 `
 

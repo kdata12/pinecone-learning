@@ -1,5 +1,6 @@
 import { INDICES, pinecone } from "./config/pinecone";
-import { BRAG_ENTRY_1 } from "./lib/constants/sample-data";
+import { SAMPLE_BRAG_ENTRY, SAMPLE_BRAG_ENTRY_SIMILAR_TO_JOB_POSTING_1 } from "./lib/constants/sample-data";
+import { RawCsvRow, SynthesizedJobPosting } from "./lib/types";
 import { summarizeBragbookEntries } from "./summarizeBragEntries";
 
 async function findRelevantJobs(achievementSummary: string[], topK: number = 5, filter: object | undefined = undefined) {
@@ -12,7 +13,7 @@ async function findRelevantJobs(achievementSummary: string[], topK: number = 5, 
       query: {
         topK,
         inputs: { text: searchText },
-        filter
+        filter: filter
       }
     });
 
@@ -24,6 +25,7 @@ async function findRelevantJobs(achievementSummary: string[], topK: number = 5, 
       console.log(`   Level: ${fields?.job_level} | Type: ${fields?.job_type}`);
       console.log(`   Location: ${fields?.job_location}`);
       console.log(`   Skills: ${fields?.skills?.slice(0, 5).join(', ')}${fields?.skills?.length > 5 ? '...' : ''}`);
+      console.log(`   Link: ${fields.job_link}`);
       console.log(`   Relevance Score: ${hit._score.toFixed(4)}\n`);
     });
 
@@ -41,21 +43,24 @@ async function demonstrateBragbookJobMatching() {
   try {
     console.log('🎯 BRAGBOOK TO JOB MATCHING DEMO\n');
 
-    // Step 1: Summarize bragbook entries
+    //  Summarize bragbook entries
     console.log('Step 1: Summarizing bragbook entries...\n');
-    const summary = await summarizeBragbookEntries(BRAG_ENTRY_1);
+    const summary = await summarizeBragbookEntries(SAMPLE_BRAG_ENTRY_SIMILAR_TO_JOB_POSTING_1);
 
-    console.log('✅ Achievement Summary Generated:');
+    console.log('achievement Summary Generated:');
     summary.achievement_summary.forEach((achievement, idx) => {
       console.log(`${idx + 1}. ${achievement}`);
     });
     console.log('\n' + '='.repeat(80) + '\n');
 
-    // Step 2: Search for relevant jobs
     console.log('Step 2: Finding relevant job opportunities...\n');
-    await findRelevantJobs(summary.achievement_summary);
+    await findRelevantJobs(summary.achievement_summary, 5, {
+      $and: [{
+        job_type: { $eq: 'Remote' },
+        skills: { $in: ['C#'] }
+      }]
+    });
 
-  
   } catch (error) {
     console.error('Error in bragbook job matching demo:', error);
   }
