@@ -19,8 +19,6 @@ A practical learning project demonstrating how to use Pinecone vector database w
    OPEN_AI_KEY=your_openai_api_key_here
    ```
 
-3. **Prepare job posting data**
-   Place your job posting CSV file named `postings.csv` in the root directory.
 
 ## Usage
 
@@ -41,6 +39,8 @@ Load job postings from CSV into Pinecone:
 ```bash
 npm run dev:insert
 ```
+
+Job posting dataset was sourced from: [kaggle](https://www.kaggle.com/datasets/asaniczka/software-engineer-job-postings-linkedin)
 
 This processes the first 50 rows from `postings.csv`, uses AI to standardize the job descriptions, and stores them as vectors.
 
